@@ -15,7 +15,6 @@ export default (req: Request, res: Response, next: NextFunction): Response | voi
         try {
             const data: string | JwtPayload = jwt.verify(token, process.env.TOKEN_SECRET as string);
 
-            console.log(data);
             const { id, name, permission } = data as JwtPayload;
 
             res.locals.user = { id, name, permission };
@@ -24,8 +23,8 @@ export default (req: Request, res: Response, next: NextFunction): Response | voi
             res.setHeader('Pragma', 'no-cache');
 
             return next();
-        } catch (error: any) {
-            return res.status(401).json(error);
+        } catch (error) {
+            return res.status(500).json({ error: 'Ocorreu um erro interno.' });
         }
     }
 };

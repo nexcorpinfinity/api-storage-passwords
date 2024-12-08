@@ -1,14 +1,8 @@
 import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
-import mongoose from 'mongoose';
 
 import { Permissions } from '../enums/Permissions';
 import { UserModel } from '../model/UserModel';
-
-interface MongoError extends Error {
-    code?: number;
-    kind?: string;
-}
 
 class UserController {
     public async store(req: Request, res: Response): Promise<Response> {
@@ -43,7 +37,7 @@ class UserController {
             return res.status(201).json(createdUser);
         } catch (error) {
             console.log(error);
-            return res.status(400).json(error);
+            return res.status(500).json({ error: 'Ocorreu um erro interno.' });
         }
     }
 
@@ -82,6 +76,25 @@ class UserController {
         try {
             const idUserByUpdate = req.query.id;
 
+            const dataUserForUpdate = req.body;
+
+            const filteredUpdates: Record<string, string> = {};
+            Object.keys(dataUserForUpdate).forEach((key) => {
+                if (dataUserForUpdate[key] !== undefined && dataUserForUpdate[key] !== '') {
+                    filteredUpdates[key] = dataUserForUpdate[key];
+                }
+            });
+
+            if (filteredUpdates.password) {
+                filteredUpdates.password = await bcrypt.hash(filteredUpdates.password, 12);
+            }
+
+            if (filteredUpdates.permission && res.locals.user.permission !== Permissions.Admin) {
+                return res.status(403).json({
+                    errors: 'Apenas administradores podem alterar a permissão de um usuário.',
+                });
+            }
+
             if (idUserByUpdate && res.locals.user.permission === Permissions.Admin) {
                 const confirmedPermissionUserAdmin = await UserModel.findById(res.locals.user.id, {
                     password: 0,
@@ -94,136 +107,100 @@ class UserController {
                     });
                 }
 
-                const verifyExistsUser = await UserModel.findById(idUserByUpdate, {
+                const getDataUser = await UserModel.findById(idUserByUpdate, {
                     password: 0,
                     __v: 0,
                 });
 
-                if (verifyExistsUser !== null) {
-                    const updatedDataUser = await UserModel.findByIdAndUpdate(
-                        verifyExistsUser._id,
-                        req.body,
+                if (getDataUser !== null) {
+                    const updatedUser = await UserModel.findByIdAndUpdate(
+                        idUserByUpdate,
+                        filteredUpdates,
                         {
                             new: true,
+                            fields: { password: 0, __v: 0 },
                         },
                     ).exec();
 
-                    return updatedDataUser;
+                    return res.status(200).json({
+                        msg: 'Usuário atualizado com sucesso!',
+                        user: updatedUser,
+                    });
                 }
+
+                return res.status(404).json({ errors: ['Usuário não encontrado.'] });
             }
 
-            const atualizarUsuario = await UserModel.findByIdAndUpdate(12, req.body, {
-                new: true,
-            }).exec();
+            const updateUserLogged = await UserModel.findByIdAndUpdate(
+                res.locals.user.id,
+                filteredUpdates,
+                {
+                    new: true,
+                },
+            ).exec();
 
-            if (!atualizarUsuario) {
+            if (!updateUserLogged) {
                 return res.status(404).json({ errors: ['Conta não encontrada'] });
             }
 
-            // const { _id, email } = atualizarUsuario;
+            const { _id, name, email } = updateUserLogged;
 
             return res.status(200).json({
                 msg: 'Usuário atualizado com sucesso!',
-                usuario_atualizado: 1123,
+                user: { _id, name, email },
             });
         } catch (error) {
-            const mongoError = error as MongoError;
-            console.log(mongoError);
-            if (mongoError instanceof mongoose.Error.CastError && mongoError.kind === 'ObjectId') {
-                return res.status(400).json({ error: 'Este ID não existe.' });
-            } else {
-                return res.status(500).json({ error: 'Ocorreu um erro interno.' });
-            }
+            console.log(error);
+            return res.status(500).json({ error: 'Ocorreu um erro interno.' });
         }
     }
 
-    //     public async delete(req: Request, res: Response): Promise<Response> {
-    //         try {
-    //             if (!) {
-    //                 return res.status(400).json({ errors: ['ID não informado'] });
-    //             }
-
-    //             const user = await UserModel.findById(req.userId).exec();
-
-    //             if (!user) {
-    //                 return res.status(404).json({ errors: ['Usuário não encontrado'] });
-    //             }
-
-    //             await UserModel.deleteOne({ _id: req.userId }).exec();
-
-    //             return res.status(200).json({
-    //                 msg: 'Usuário deletado com sucesso',
-    //                 usuario_deletado: user.email,
-    //             });
-    //         } catch (error) {
-    //             const mongoError = error as MongoError;
-    //             console.log(mongoError);
-    //             if (mongoError instanceof mongoose.Error.CastError && mongoError.kind === 'ObjectId') {
-    //                 return res.status(400).json({ error: 'Este ID não existe.' });
-    //             } else {
-    //                 return res.status(500).json({ error: 'Ocorreu um erro interno.' });
-    //             }
-    //         }
-    //     }
-    // }
-
-    public async updateUser(req: Request, res: Response): Promise<Response> {
+    public async delete(req: Request, res: Response) {
         try {
-            const { id } = req.params;
+            const idUserDeleteByAdmin = req.query.id;
 
-            const atualizarUsuario = await UserModel.findByIdAndUpdate(id, req, {
-                new: true,
-            }).exec();
+            const userLogged = res.locals.user;
 
-            if (!atualizarUsuario) {
-                return res.status(404).json({ errors: ['Conta não encontrada'] });
+            if (idUserDeleteByAdmin && res.locals.user.permission === Permissions.Admin) {
+                const confirmedPermissionUserAdmin = await UserModel.findById(res.locals.user.id, {
+                    password: 0,
+                    __v: 0,
+                });
+
+                if (confirmedPermissionUserAdmin?.permission !== Permissions.Admin) {
+                    return res.status(403).json({
+                        errors: 'Você não é um administrador para poder apagar outro usuário.',
+                    });
+                }
+
+                const getDataUser = await UserModel.findById(idUserDeleteByAdmin, {
+                    password: 0,
+                    __v: 0,
+                });
+
+                if (getDataUser !== null) {
+                    await UserModel.deleteOne({ _id: getDataUser._id }).exec();
+
+                    return res.status(200).json({ success: true });
+                }
+
+                return res.status(404).json({ errors: ['Usuário não encontrado.'] });
             }
 
-            return res.status(200).json({
-                msg: 'Usuário atualizado com sucesso!',
-                usuario_atualizado: 'asd',
-            });
-        } catch (error) {
-            const mongoError = error as MongoError;
-            // console.log(mongoError);
-            if (mongoError instanceof mongoose.Error.CastError && mongoError.kind === 'ObjectId') {
-                return res.status(400).json({ error: 'Este ID não existe.' });
-            } else {
-                return res.status(500).json({ error: 'Ocorreu um erro interno.' });
-            }
-        }
-    }
+            const userExists = await UserModel.findById(userLogged.id).exec();
 
-    public async deleteUser(req: Request, res: Response): Promise<Response> {
-        try {
-            const { id } = req.params;
-            console.log(id);
-
-            if (!id) {
-                return res.status(400).json({ errors: ['ID não informado'] });
-            }
-
-            const user = await UserModel.findById(id).exec();
-
-            if (!user) {
+            if (!userExists) {
                 return res.status(404).json({ errors: ['Usuário não encontrado'] });
             }
 
-            await UserModel.deleteOne({ _id: user }).exec();
+            await UserModel.deleteOne({ _id: userExists._id }).exec();
 
-            return res.status(200).json({
-                msg: 'Usuário deletado com sucesso',
-                usuario_deletado: user.email,
-            });
+            return res.status(200).json({ success: true });
         } catch (error) {
-            const mongoError = error as MongoError;
-            console.log(mongoError);
-            if (mongoError instanceof mongoose.Error.CastError && mongoError.kind === 'ObjectId') {
-                return res.status(400).json({ error: 'Este ID não existe.' });
-            } else {
-                return res.status(500).json({ error: 'Ocorreu um erro interno.' });
-            }
+            console.log(error);
+            return res.status(500).json({ error: 'Ocorreu um erro interno.' });
         }
     }
 }
+
 export { UserController };

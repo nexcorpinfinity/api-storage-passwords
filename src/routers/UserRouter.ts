@@ -16,4 +16,7 @@ userRouter.get('/', AuthLoginRequired, AdminRequired, (req, res) =>
     userController.getAllUsers(req, res),
 );
 
+userRouter.put('/', AuthLoginRequired, (req, res) => userController.update(req, res));
+userRouter.delete('/', AuthLoginRequired, (req, res) => userController.delete(req, res));
+
 export { userRouter };

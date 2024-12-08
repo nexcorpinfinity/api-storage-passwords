@@ -110,7 +110,7 @@ class PasswdController {
             const idUser = res.locals.user.id;
 
             const verifyExists = await PasswdModel.findOne({ _id: id, user_id: idUser }).exec();
-            console.log(verifyExists);
+
             if (!verifyExists) {
                 return res.status(404).json({ errors: ['Password não encontrada'] });
             }
