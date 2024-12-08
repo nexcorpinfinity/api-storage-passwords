@@ -22,18 +22,18 @@ export default async (
         }).exec();
 
         if (!getDataUser || getDataUser === null) {
-            return res.status(401).json({ message: 'Usuário não encontrado.' });
+            return res.status(403).json({ message: 'Usuário não encontrado.' });
         }
 
         if (userInfo.permission !== Permissions.Admin) {
-            return res.status(401).json({ message: 'Usuário não autorizado.' });
+            return res.status(403).json({ message: 'Usuário não autorizado.' });
         }
 
         if (Permissions.Admin === getDataUser.permission) {
             return next();
         }
 
-        return res.status(401).json({ message: 'Usuário não autorizado.' });
+        return res.status(403).json({ message: 'Usuário não autorizado.' });
     } catch (error: any) {
         return res.status(401).json({ message: 'Erro ao verificar permissões', error });
     }

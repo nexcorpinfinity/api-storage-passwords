@@ -8,7 +8,9 @@ const userRouter = Router();
 
 const userController = new UserController();
 
-userRouter.post('/', AuthLoginRequired, (req, res) => userController.store(req, res));
+userRouter.post('/', AuthLoginRequired, AdminRequired, (req, res) =>
+    userController.store(req, res),
+);
 userRouter.get('/profile-user', AuthLoginRequired, (req, res) =>
     userController.getDataUser(req, res),
 );
