@@ -43,6 +43,17 @@ class UserController {
 
     public async getDataUser(req: Request, res: Response): Promise<Response> {
         try {
+            const idUserByUpdate = req.query.id;
+
+            if (idUserByUpdate) {
+                const getprofileUser = await UserModel.findById(idUserByUpdate, {
+                    password: 0,
+                    __v: 0,
+                });
+
+                return res.status(200).json(getprofileUser);
+            }
+
             const idUser = res.locals.user.id;
 
             const dataFromUser = await UserModel.findById(idUser, {
