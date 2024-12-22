@@ -83,7 +83,7 @@ class PasswdController {
             const idUser = res.locals.user.id;
 
             const verify = await PasswdModel.findOne({ _id: id, user_id: idUser }).exec();
-
+            // verificar se ja existe alguma com o nome igual
             if (!verify) {
                 return res.status(404).json({ errors: ['Password não encontrada'] });
             }
