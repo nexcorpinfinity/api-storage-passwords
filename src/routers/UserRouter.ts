@@ -8,6 +8,13 @@ const userRouter = Router();
 
 const userController = new UserController();
 
+userRouter.post('/set-code', AuthLoginRequired, (req, res) =>
+    userController.setSecureCode(req, res),
+);
+
+userRouter.get('/count', AuthLoginRequired, AdminRequired, (req, res) =>
+    userController.countAllUsers(req, res),
+);
 userRouter.post('/', AuthLoginRequired, AdminRequired, (req, res) =>
     userController.store(req, res),
 );

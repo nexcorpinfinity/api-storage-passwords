@@ -9,9 +9,9 @@ import { Routers } from './routers';
 
 dotenv.config();
 
-if (!process.env.FRONT_END) {
-    throw new Error('FRONT END URL NOT CONFIGURED IN .ENV PLEASE INSERT THE URL IN .ENV');
-}
+// if (!process.env.FRONT_END) {
+//     throw new Error('FRONT END URL NOT CONFIGURED IN .ENV PLEASE INSERT THE URL IN .ENV');
+// }
 
 const whitelistUrlPermitted: string[] = [
     process.env.FRONT_END as string,

@@ -34,6 +34,14 @@ const UserSchema = new Schema(
                 message: 'Permissão inválida',
             },
         },
+        security_code: {
+            type: String,
+            default: null,
+        },
+        recovery_code: {
+            type: String,
+            default: null,
+        },
         password: {
             type: String,
             required: [true, 'Campo senha é obrigatório'],

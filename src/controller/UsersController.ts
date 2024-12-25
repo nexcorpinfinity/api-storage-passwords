@@ -212,6 +212,55 @@ class UserController {
             return res.status(500).json({ error: 'Ocorreu um erro interno.' });
         }
     }
+
+    public async setSecureCode(req: Request, res: Response) {
+        try {
+            const { secure_code } = req.body;
+
+            const idUserLogged = res.locals.user.id;
+
+            const user = await UserModel.findById(idUserLogged);
+
+            if (!user) {
+                return res.status(404).json({ error: 'Usuário não encontrado' });
+            }
+
+            if (user.security_code) {
+                return res.status(400).json({ error: 'Código de segurança já cadastrado' });
+            }
+
+            if (!secure_code || secure_code.length < 4) {
+                return res
+                    .status(400)
+                    .json({ error: 'O código de segurança deve ter pelo menos 4 caracteres' });
+            }
+
+            const hashSecureCode = bcrypt.hashSync(secure_code, 12);
+
+            await UserModel.findByIdAndUpdate(
+                idUserLogged,
+                {
+                    security_code: hashSecureCode,
+                },
+                { new: true },
+            ).exec();
+
+            return res.status(201).json({ success: true });
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    public async countAllUsers(req: Request, res: Response) {
+        try {
+            const countUsers = await UserModel.countDocuments({}).exec();
+
+            return res.status(200).json({ count: countUsers });
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({ error: 'Ocorreu um erro interno.' });
+        }
+    }
 }
 
 export { UserController };

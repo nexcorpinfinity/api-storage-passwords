@@ -1,0 +1,12 @@
+Criar um codigo de segurança para poder vizualizar as senhas 
+Criar um codigo de recuperacao
+
+Corrigir as validacoes
+
+colocar um campo a mais no passwords, dizendo o email, plataforma 
+
+criar uam tabela intermediaria para poder vincular uma senha a outras pessoas por email 
+
+ver como fica as rotas de admin no dashboard: exemplo, deixar um botao no header para acessar area de admin e as tabs embaixo apenas fica as rotas de admin como usuarios, senhas compartilhadas etc
+
+ver a criptografia das senhas para salvar junto com um codigo de segurança 
