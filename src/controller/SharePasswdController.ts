@@ -1,0 +1,3 @@
+class SharePasswdController {}
+
+export { SharePasswdController };

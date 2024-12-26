@@ -6,7 +6,7 @@ import { AluraEmailsModel } from '../model/AluraEmailsModel';
 class EmailController {
     public async index(req: Request, res: Response) {
         try {
-            const listarContas = await AluraEmailsModel.find({}, { senha_conta: 0, __v: 0 });
+            const listarContas = await AluraEmailsModel.find({}, { __v: 0 });
             return res.status(200).json(listarContas);
         } catch (e) {
             return res.json(null);

@@ -1,12 +1,6 @@
-Criar um codigo de segurança para poder vizualizar as senhas 
-Criar um codigo de recuperacao
-
-Corrigir as validacoes
-
-colocar um campo a mais no passwords, dizendo o email, plataforma 
-
-criar uam tabela intermediaria para poder vincular uma senha a outras pessoas por email 
-
-ver como fica as rotas de admin no dashboard: exemplo, deixar um botao no header para acessar area de admin e as tabs embaixo apenas fica as rotas de admin como usuarios, senhas compartilhadas etc
-
-ver a criptografia das senhas para salvar junto com um codigo de segurança 
+- Criar uma rota de senhas compartilhadas para criar uma senha e compartilhar com amigo e só o dono da senha pode editar e caso ele der permissão para pessoa a pessoa edita a senha
+- Criar um novo campo na tabela de users de username e depois fazer a busca por userName
+- Criar uma Rota para adicionar amigos 'Follow e unfollow'
+- Criar uma nova tela de perfil
+- Criar rota para fazer upload de imagens tem o multer/cloudnary q é free
+- Criar uma api key do env  para a api se comunicar com o app, pois o cors n funciona
