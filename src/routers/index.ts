@@ -3,6 +3,7 @@ import { Router } from 'express';
 
 import { authRouter } from './AuthRouter';
 import { emailsRouter } from './EmailsRouter';
+import { notesRouter } from './NotesRouter';
 import { passwdRouter } from './PasswdRouter';
 import { userRouter } from './UserRouter';
 
@@ -24,6 +25,8 @@ class Routers {
         this.router.use(`${versionApi}/passwd`, passwdRouter);
 
         this.router.use(`${versionApi}/emails`, emailsRouter);
+
+        this.router.use(`${versionApi}/notes`, notesRouter);
     }
 
     public getRouter(): Router {

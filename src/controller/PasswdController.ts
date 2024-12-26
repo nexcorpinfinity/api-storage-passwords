@@ -133,10 +133,6 @@ class PasswdController {
 
             const passwdUpdate = await PasswdModel.findByIdAndUpdate(id, obj, { new: true }).exec();
 
-            if (!passwdUpdate) {
-                return res.status(404).json({ errors: ['Password não encontrada'] });
-            }
-
             return res.status(200).json(passwdUpdate);
         } catch (error) {
             console.log(error);
