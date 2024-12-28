@@ -1,42 +1,17 @@
 import { Request, Response } from 'express';
-import mongoose from 'mongoose';
 
+import { ResponseHTTP } from '../helpers/ResponseHTTP';
 import { AluraEmailsModel } from '../model/AluraEmailsModel';
 
 class EmailController {
     public async index(req: Request, res: Response) {
         try {
             const listarContas = await AluraEmailsModel.find({}, { __v: 0 });
-            return res.status(200).json(listarContas);
+            return ResponseHTTP.success(res, 200, 'Sucesso ao listar contas', [
+                { emails: listarContas },
+            ]);
         } catch (e) {
-            return res.json(null);
-        }
-    }
-
-    public async update(req: Request, res: Response) {
-        try {
-            const { id } = req.params;
-
-            const contaAtualizada = await AluraEmailsModel.findByIdAndUpdate(id, req.body, {
-                new: true,
-            });
-
-            if (!contaAtualizada) {
-                return res.status(404).json({ errors: ['Conta não encontrada'] });
-            }
-
-            const { plataforma, email, senha, expiracao } = contaAtualizada;
-
-            return res.status(200).json({
-                msg: 'Conta atualizada com sucesso',
-                conta_atualizada: { plataforma, email, senha, expiracao },
-            });
-        } catch (error) {
-            if (error instanceof mongoose.Error.CastError && error.kind === 'ObjectId') {
-                return res.status(400).json({ error: 'Este ID não existe.' });
-            } else {
-                return res.status(500).json({ error: 'Ocorreu um erro interno.' });
-            }
+            return ResponseHTTP.error(res, 400, 'Não possui nenhum Email', [{ emails: null }]);
         }
     }
 

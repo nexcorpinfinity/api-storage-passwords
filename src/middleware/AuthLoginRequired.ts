@@ -2,11 +2,13 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
+import { ResponseHTTP } from '../helpers/ResponseHTTP';
+
 export default (req: Request, res: Response, next: NextFunction): Response | void => {
     const authorization: string | undefined = req.headers.authorization;
 
     if (!authorization || !authorization.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Usuário não autenticado.' });
+        return ResponseHTTP.error(res, 401, 'Usuário não autenticado', []);
     }
 
     if (authorization && authorization.startsWith('Bearer ')) {
@@ -24,7 +26,7 @@ export default (req: Request, res: Response, next: NextFunction): Response | voi
 
             return next();
         } catch (error) {
-            return res.status(500).json({ error: 'Ocorreu um erro interno.' });
+            return ResponseHTTP.error(res, 401, 'Token inválido', []);
         }
     }
 };

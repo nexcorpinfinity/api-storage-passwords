@@ -12,10 +12,6 @@ emailsRouter.get('/', AuthLoginRequired, AdminRequired, (req, res) =>
     emailsController.index(req, res),
 );
 
-emailsRouter.put('/:id', AuthLoginRequired, AdminRequired, (req, res) =>
-    emailsController.update(req, res),
-);
-
 emailsRouter.delete('/:id', AuthLoginRequired, AdminRequired, (req, res) =>
     emailsController.delete(req, res),
 );

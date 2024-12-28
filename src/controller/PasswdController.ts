@@ -2,6 +2,7 @@ import CryptoJS from 'crypto-js';
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 
+import { ResponseHTTP } from '../helpers/ResponseHTTP';
 import { PasswdModel } from '../model/PasswdModel';
 import { UserModel } from '../model/UserModel';
 
@@ -13,18 +14,19 @@ class PasswdController {
             const { name, login_email, password } = req.body;
 
             if (!name || !password) {
-                res.status(400).json('Preencha o nome e passwd');
+                return ResponseHTTP.error(res, 400, 'Preencha o nome e passwd', []);
             }
+
             const idUser = res.locals.user.id;
 
             if (await PasswdModel.findOne({ name: name, user_id: idUser })) {
-                return res.status(400).json({ error: 'Este nome já existe' });
+                return ResponseHTTP.error(res, 400, 'Este nome já existe', []);
             }
 
             const findUser = await UserModel.findOne({ _id: idUser }).exec();
 
             if (!findUser) {
-                return res.status(400).json({ error: 'Usuário não encontrado' });
+                return ResponseHTTP.error(res, 400, 'Usuário não encontrado', []);
             }
 
             const getSecretKey = this.generateSecretKey(findUser?.security_code);
@@ -43,10 +45,11 @@ class PasswdController {
 
             const created = await createNewPass.save();
 
-            return res.status(201).json(created);
+            return ResponseHTTP.success(res, 201, 'Sucesso ao criar uma senha', [
+                { passwd: created },
+            ]);
         } catch (error) {
-            console.log(error);
-            return res.status(500).json({ errors: ['Erro Interno store'] });
+            return ResponseHTTP.error(res, 500, 'Erro Interno store', []);
         }
     }
 
@@ -55,7 +58,7 @@ class PasswdController {
             const findUser = await UserModel.findOne({ _id: res.locals.user.id }).exec();
 
             if (!findUser) {
-                return res.status(400).json({ error: 'Usuário não encontrado' });
+                return ResponseHTTP.error(res, 400, 'Usuário não encontrado', []);
             }
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,10 +91,12 @@ class PasswdController {
                 }),
             );
 
-            return res.status(200).json(listPasswords);
+            return ResponseHTTP.success(res, 200, 'Sucesso ao listar senhas', [
+                { passwords: listPasswords },
+            ]);
         } catch (error) {
             console.log(error);
-            return res.status(500).json({ errors: ['Erro Interno index'] });
+            return ResponseHTTP.error(res, 500, 'Erro Interno index', []);
         }
     }
 
@@ -104,7 +109,7 @@ class PasswdController {
             const findUser = await UserModel.findOne({ _id: idUser }).exec();
 
             if (!findUser) {
-                return res.status(400).json({ error: 'Usuário não encontrado' });
+                return ResponseHTTP.error(res, 404, 'Usuário não encontrado', []);
             }
 
             const getSecretKey = this.generateSecretKey(findUser?.security_code);
@@ -112,12 +117,12 @@ class PasswdController {
             const verify = await PasswdModel.findOne({ _id: id, user_id: idUser }).exec();
 
             if (!verify) {
-                return res.status(404).json({ errors: ['Password não encontrada'] });
+                return ResponseHTTP.error(res, 404, 'Password não encontrada', []);
             }
 
             const existingPassword = await PasswdModel.findOne({ name, user_id: idUser }).exec();
             if (existingPassword && existingPassword._id.toString() !== id) {
-                return res.status(400).json({ errors: ['Nome de senha já existe.'] });
+                return ResponseHTTP.error(res, 400, 'Nome de senha já existe', []);
             }
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -133,10 +138,12 @@ class PasswdController {
 
             const passwdUpdate = await PasswdModel.findByIdAndUpdate(id, obj, { new: true }).exec();
 
-            return res.status(200).json(passwdUpdate);
+            return ResponseHTTP.success(res, 200, 'Sucesso ao atualizar senha', [
+                { passwd: passwdUpdate },
+            ]);
         } catch (error) {
             console.log(error);
-            return res.status(500).json({ errors: ['Erro Interno update'] });
+            return ResponseHTTP.error(res, 500, 'Erro Interno update', []);
         }
     }
 
@@ -149,15 +156,15 @@ class PasswdController {
             const verifyExists = await PasswdModel.findOne({ _id: id, user_id: idUser }).exec();
 
             if (!verifyExists) {
-                return res.status(404).json({ errors: ['Password não encontrada'] });
+                return ResponseHTTP.error(res, 404, 'Password não encontrada', []);
             }
 
             await PasswdModel.deleteOne({ _id: id }).exec();
 
-            return res.status(200).json({ success: true });
+            return ResponseHTTP.success(res, 200, 'Sucesso ao deletar senha', []);
         } catch (error) {
             console.log(error);
-            return res.status(500).json({ errors: ['Erro Interno delete'] });
+            return ResponseHTTP.error(res, 500, 'Erro Interno delete', []);
         }
     }
 
@@ -198,9 +205,11 @@ class PasswdController {
         try {
             const count = await PasswdModel.countDocuments().exec();
 
-            return res.status(200).json({ count: count });
+            return ResponseHTTP.success(res, 200, 'Sucesso ao contar todas as senhas', [
+                { count: count },
+            ]);
         } catch (error) {
-            return res.status(500).json({ errors: ['Erro Interno countAllPasswd'] });
+            return ResponseHTTP.error(res, 500, 'Erro Interno countAllPasswdAdmin', []);
         }
     }
 
@@ -208,9 +217,11 @@ class PasswdController {
         try {
             const count = await PasswdModel.countDocuments({ user_id: res.locals.user.id }).exec();
 
-            return res.status(200).json({ count: count });
+            return ResponseHTTP.success(res, 200, 'Sucesso ao contar todas as senhas', [
+                { count: count },
+            ]);
         } catch (error) {
-            return res.status(500).json({ errors: ['Erro Interno countAllPasswd'] });
+            return ResponseHTTP.error(res, 500, 'Erro Interno countAllPasswd', []);
         }
     }
 }

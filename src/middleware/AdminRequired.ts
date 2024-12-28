@@ -2,6 +2,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 import { Permissions } from '../enums/Permissions';
+import { ResponseHTTP } from '../helpers/ResponseHTTP';
 import { UserModel } from '../model/UserModel';
 
 export default async (
@@ -13,7 +14,7 @@ export default async (
         const userInfo = res.locals.user;
 
         if (!userInfo) {
-            return res.status(401).json({ message: 'Usuário não autenticado.' });
+            return ResponseHTTP.error(res, 401, 'Usuário não autenticado', []);
         }
 
         const getDataUser = await UserModel.findById(userInfo.id, {
@@ -22,19 +23,19 @@ export default async (
         }).exec();
 
         if (!getDataUser || getDataUser === null) {
-            return res.status(403).json({ message: 'Usuário não encontrado.' });
+            return ResponseHTTP.error(res, 404, 'Usuário não encontrado', []);
         }
 
         if (userInfo.permission !== Permissions.Admin) {
-            return res.status(403).json({ message: 'Usuário não autorizado.' });
+            return ResponseHTTP.error(res, 403, 'Usuário não autorizado', []);
         }
 
         if (Permissions.Admin === getDataUser.permission) {
             return next();
         }
 
-        return res.status(403).json({ message: 'Usuário não autorizado.' });
-    } catch (error: any) {
-        return res.status(401).json({ message: 'Erro ao verificar permissões', error });
+        return ResponseHTTP.error(res, 403, 'Usuário não autorizado', []);
+    } catch (error) {
+        return ResponseHTTP.error(res, 403, 'Erro ao verificar permissões', []);
     }
 };

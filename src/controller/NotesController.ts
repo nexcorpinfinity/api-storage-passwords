@@ -1,14 +1,15 @@
 import { Request, Response } from 'express';
 
+import { ResponseHTTP } from '../helpers/ResponseHTTP';
 import { NotesModel } from '../model/NotesModel';
 
 class NotesController {
     public async store(req: Request, res: Response) {
         try {
             const { name, description } = req.body;
-
+            console.log(123);
             if (!name) {
-                return res.status(400).json({ error: 'Nome é obrigatorio' });
+                return ResponseHTTP.error(res, 400, 'Nome é obrigatorio', []);
             }
 
             const findName = await NotesModel.findOne({
@@ -16,7 +17,7 @@ class NotesController {
             });
 
             if (findName) {
-                return res.status(400).json({ message: 'Esse nome já existe' });
+                return ResponseHTTP.error(res, 400, 'Esse nome já existe', []);
             }
 
             const notes = await NotesModel.create({
@@ -25,10 +26,9 @@ class NotesController {
                 user_id: res.locals.user.id,
             });
 
-            res.status(201).json({ success: true, notes });
+            return ResponseHTTP.success(res, 201, 'Sucesso ao criar uma nota.', [{ notes: notes }]);
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: 'Internal server error store' });
+            return ResponseHTTP.error(res, 500, 'Internal server error store', []);
         }
     }
 
@@ -42,15 +42,18 @@ class NotesController {
                     user_id: res.locals.user.id,
                 });
 
-                return res.status(200).json({ success: true, notes });
+                return ResponseHTTP.success(res, 200, 'Sucesso ao trazer a nota.', [
+                    { notes: notes },
+                ]);
             }
 
             const notes = await NotesModel.find({ user_id: res.locals.user.id });
 
-            res.status(200).json({ success: true, notes });
+            return ResponseHTTP.success(res, 200, 'Sucesso ao trazer todas as nota.', [
+                { notes: notes },
+            ]);
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: 'Internal server error index' });
+            return ResponseHTTP.error(res, 500, 'Internal server error index', []);
         }
     }
 
@@ -70,12 +73,11 @@ class NotesController {
             });
 
             if (verifyName) {
-                return res.status(400).json({ message: 'Já possui uma nota com esse nome' });
+                return ResponseHTTP.error(res, 400, 'Já possui uma nota com esse nome', []);
             }
 
             if (!note) {
-                res.status(404).json({ message: 'Nota não encontrada' });
-                return;
+                return ResponseHTTP.error(res, 404, 'Nota não encontrada', []);
             }
 
             if (name !== undefined) {
@@ -87,10 +89,12 @@ class NotesController {
 
             await note.save();
 
-            res.status(200).json({ success: true, note });
+            return ResponseHTTP.success(res, 200, 'Sucesso ao atualizar a nota.', [
+                { notes: note },
+            ]);
         } catch (error) {
             console.error(error);
-            res.status(500).json({ message: 'Erro interno ao atualizar a nota' });
+            return ResponseHTTP.error(res, 500, 'Internal server error update', []);
         }
     }
 
@@ -104,16 +108,14 @@ class NotesController {
             });
 
             if (!note) {
-                res.status(404).json({ message: 'Nota não encontrada' });
-                return;
+                return ResponseHTTP.error(res, 404, 'Nota não encontrada', []);
             }
 
             await note.deleteOne();
 
-            return res.status(200).json({ success: true });
+            return ResponseHTTP.success(res, 200, 'Sucesso ao deletar a nota.', []);
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: 'Erro interno ao atualizar a nota' });
+            return ResponseHTTP.error(res, 500, 'Internal server error delete', []);
         }
     }
 }

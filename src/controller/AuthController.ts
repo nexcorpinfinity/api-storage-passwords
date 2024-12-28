@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 
+import { ResponseHTTP } from '../helpers/ResponseHTTP';
 import { UserModel } from '../model/UserModel';
 
 class AuthController {
@@ -9,19 +10,19 @@ class AuthController {
         const { email = '', password = '' } = req.body;
 
         if (!email || !password) {
-            return res.status(401).json({ error: ['Preencha todos os campos'] });
+            return ResponseHTTP.error(res, 401, 'Preencha todos os campos', []);
         }
 
         const user = await UserModel.findOne({ email }).exec();
 
         if (!user) {
-            return res.status(401).json({ error: ['Usuário não existe'] });
+            return ResponseHTTP.error(res, 401, 'Usuário não existe', []);
         }
 
         const checkPassValid = await this.verifyPasswordAndCompare(password, user.password);
 
         if (!checkPassValid) {
-            return res.status(401).json({ error: ['Senha inválida'] });
+            return ResponseHTTP.error(res, 401, 'Senha inválida', []);
         }
 
         const getToken = this.generateToken(
@@ -31,7 +32,7 @@ class AuthController {
             user.permission,
         );
 
-        return res.json({ token: getToken });
+        return ResponseHTTP.success(res, 200, 'Sucesso ao fazer Login', [{ token: getToken }]);
     }
 
     private async verifyPasswordAndCompare(
@@ -49,6 +50,9 @@ class AuthController {
                 permission,
             },
             process.env.TOKEN_SECRET as string,
+            // {
+            //     expiresIn: process.env.TOKEN_EXPIRATION,
+            // },
         );
 
         return token;

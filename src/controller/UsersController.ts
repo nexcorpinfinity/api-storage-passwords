@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 
 import { Permissions } from '../enums/Permissions';
+import { ResponseHTTP } from '../helpers/ResponseHTTP';
 import { UserModel } from '../model/UserModel';
 
 class UserController {
@@ -10,15 +11,17 @@ class UserController {
             const { name, email, password, permission } = req.body;
 
             if (!name || !email || !password || !permission) {
-                return res.status(400).json({ error: 'Preencha todos os campos' });
+                return ResponseHTTP.error(res, 400, 'Preencha todos os campos', []);
             }
 
-            if (await UserModel.findOne({ email })) {
-                return res.status(400).json({ error: 'Email já existe' });
+            const findUser = await UserModel.findOne({ email: email });
+
+            if (findUser) {
+                return ResponseHTTP.error(res, 400, 'Usuário já existe', []);
             }
 
             if (permission !== 'admin' && permission !== 'user') {
-                return res.status(400).json({ error: 'Permissão inválida' });
+                return ResponseHTTP.error(res, 403, 'Permissão inválida', []);
             }
 
             const hashPasswd = bcrypt.hashSync(password, 12);
@@ -34,13 +37,15 @@ class UserController {
 
             const createdUser = await createModelUser.save();
 
-            return res.status(201).json(createdUser);
+            return ResponseHTTP.success(res, 201, 'Usuário criado com sucesso', [
+                { user: createdUser },
+            ]);
         } catch (error) {
-            console.log(error);
-            return res.status(500).json({ error: 'Ocorreu um erro interno.' });
+            return ResponseHTTP.error(res, 500, 'Erro Interno store', []);
         }
     }
 
+    // metodo q n faz tanto sentido
     public async getDataUser(req: Request, res: Response): Promise<Response> {
         try {
             const idUserByUpdate = req.query.id;
@@ -51,7 +56,9 @@ class UserController {
                     __v: 0,
                 });
 
-                return res.status(200).json(getprofileUser);
+                return ResponseHTTP.success(res, 200, 'Sucesso ao trazer os dados do usuário', [
+                    { user: getprofileUser },
+                ]);
             }
 
             const idUser = res.locals.user.id;
@@ -61,15 +68,17 @@ class UserController {
                 __v: 0,
             }).exec();
 
-            return res.status(200).json(dataFromUser);
+            return ResponseHTTP.success(res, 200, 'Sucesso ao trazer os dados do usuário', [
+                { user: dataFromUser },
+            ]);
         } catch (error) {
-            return res.status(500).json(null);
+            return ResponseHTTP.error(res, 500, 'Erro Interno getDataUser', []);
         }
     }
 
     public async getAllUsers(req: Request, res: Response): Promise<Response> {
         try {
-            const dataFromUser = await UserModel.find(
+            const users = await UserModel.find(
                 {},
                 {
                     password: 0,
@@ -77,9 +86,11 @@ class UserController {
                 },
             ).exec();
 
-            return res.status(200).json(dataFromUser);
+            return ResponseHTTP.success(res, 200, 'Sucesso ao trazer todos os usuários', [
+                { users: users },
+            ]);
         } catch (error) {
-            return res.status(500).json(null);
+            return ResponseHTTP.error(res, 500, 'Erro Interno getAllUsers', []);
         }
     }
 
@@ -101,9 +112,12 @@ class UserController {
             }
 
             if (filteredUpdates.permission && res.locals.user.permission !== Permissions.Admin) {
-                return res.status(403).json({
-                    errors: 'Apenas administradores podem alterar a permissão de um usuário.',
-                });
+                return ResponseHTTP.error(
+                    res,
+                    403,
+                    'Apenas administradores podem alterar a permissão de um usuário.',
+                    [],
+                );
             }
 
             if (idUserByUpdate && res.locals.user.permission === Permissions.Admin) {
@@ -113,9 +127,12 @@ class UserController {
                 });
 
                 if (confirmedPermissionUserAdmin?.permission !== Permissions.Admin) {
-                    return res.status(403).json({
-                        errors: 'Você não é um administrador para poder atualizar os dados de outro usuário.',
-                    });
+                    return ResponseHTTP.error(
+                        res,
+                        403,
+                        'Você não é um administrador para poder atualizar os dados de outro usuário.',
+                        [],
+                    );
                 }
 
                 const getDataUser = await UserModel.findById(idUserByUpdate, {
@@ -133,13 +150,12 @@ class UserController {
                         },
                     ).exec();
 
-                    return res.status(200).json({
-                        msg: 'Usuário atualizado com sucesso!',
-                        user: updatedUser,
-                    });
+                    return ResponseHTTP.success(res, 200, 'Usuário atualizado com sucesso!', [
+                        { user: updatedUser },
+                    ]);
                 }
 
-                return res.status(404).json({ errors: ['Usuário não encontrado.'] });
+                return ResponseHTTP.error(res, 404, 'Usuário não encontrado', []);
             }
 
             const updateUserLogged = await UserModel.findByIdAndUpdate(
@@ -151,18 +167,16 @@ class UserController {
             ).exec();
 
             if (!updateUserLogged) {
-                return res.status(404).json({ errors: ['Conta não encontrada'] });
+                return ResponseHTTP.error(res, 404, 'Usuário não encontrado', []);
             }
 
             const { _id, name, email } = updateUserLogged;
 
-            return res.status(200).json({
-                msg: 'Usuário atualizado com sucesso!',
-                user: { _id, name, email },
-            });
+            return ResponseHTTP.success(res, 200, 'Usuário atualizado com sucesso!', [
+                { user: { _id, name, email } },
+            ]);
         } catch (error) {
-            console.log(error);
-            return res.status(500).json({ error: 'Ocorreu um erro interno.' });
+            return ResponseHTTP.error(res, 500, 'Erro Interno update', []);
         }
     }
 
@@ -179,9 +193,12 @@ class UserController {
                 });
 
                 if (confirmedPermissionUserAdmin?.permission !== Permissions.Admin) {
-                    return res.status(403).json({
-                        errors: 'Você não é um administrador para poder apagar outro usuário.',
-                    });
+                    return ResponseHTTP.error(
+                        res,
+                        403,
+                        'Você não é um administrador para poder apagar outro usuário.',
+                        [],
+                    );
                 }
 
                 const getDataUser = await UserModel.findById(idUserDeleteByAdmin, {
@@ -192,24 +209,23 @@ class UserController {
                 if (getDataUser !== null) {
                     await UserModel.deleteOne({ _id: getDataUser._id }).exec();
 
-                    return res.status(200).json({ success: true });
+                    return ResponseHTTP.success(res, 200, 'Usuário deletado com sucesso!', []);
                 }
 
-                return res.status(404).json({ errors: ['Usuário não encontrado.'] });
+                return ResponseHTTP.error(res, 404, 'Usuário não encontrado', []);
             }
 
             const userExists = await UserModel.findById(userLogged.id).exec();
 
             if (!userExists) {
-                return res.status(404).json({ errors: ['Usuário não encontrado'] });
+                return ResponseHTTP.error(res, 404, 'Usuário não encontrado', []);
             }
 
             await UserModel.deleteOne({ _id: userExists._id }).exec();
 
-            return res.status(200).json({ success: true });
+            return ResponseHTTP.success(res, 200, 'Usuário deletado com sucesso!', []);
         } catch (error) {
-            console.log(error);
-            return res.status(500).json({ error: 'Ocorreu um erro interno.' });
+            return ResponseHTTP.error(res, 500, 'Erro Interno delete', []);
         }
     }
 
@@ -222,17 +238,20 @@ class UserController {
             const user = await UserModel.findById(idUserLogged);
 
             if (!user) {
-                return res.status(404).json({ error: 'Usuário não encontrado' });
+                return ResponseHTTP.error(res, 404, 'Usuário não encontrado', []);
             }
 
             if (user.security_code) {
-                return res.status(400).json({ error: 'Código de segurança já cadastrado' });
+                return ResponseHTTP.error(res, 400, 'Código de segurança já cadastrado', []);
             }
 
             if (!secure_code || secure_code.length < 4) {
-                return res
-                    .status(400)
-                    .json({ error: 'O código de segurança deve ter pelo menos 4 caracteres' });
+                return ResponseHTTP.error(
+                    res,
+                    400,
+                    'O código de segurança deve ter pelo menos 4 caracteres',
+                    [],
+                );
             }
 
             const hashSecureCode = bcrypt.hashSync(secure_code, 12);
@@ -245,9 +264,9 @@ class UserController {
                 { new: true },
             ).exec();
 
-            return res.status(201).json({ success: true });
+            return ResponseHTTP.success(res, 200, 'Código de segurança cadastrado com sucesso', []);
         } catch (error) {
-            console.log(error);
+            return ResponseHTTP.error(res, 500, 'Erro Interno setSecureCode', []);
         }
     }
 
@@ -255,10 +274,11 @@ class UserController {
         try {
             const countUsers = await UserModel.countDocuments({}).exec();
 
-            return res.status(200).json({ count: countUsers });
+            return ResponseHTTP.success(res, 200, 'Sucesso ao contar usuários', [
+                { count: countUsers },
+            ]);
         } catch (error) {
-            console.log(error);
-            return res.status(500).json({ error: 'Ocorreu um erro interno.' });
+            return ResponseHTTP.error(res, 500, 'Erro Interno countAllUsers', []);
         }
     }
 }
