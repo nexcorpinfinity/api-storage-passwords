@@ -71,7 +71,9 @@ class PasswdController {
             const listPasswords = await PasswdModel.find(
                 { ...filter, user_id: res.locals.user.id },
                 { __v: 0 },
-            ).exec();
+            )
+                .sort({ createdAt: -1 })
+                .exec();
 
             await Promise.all(
                 listPasswords.map(async (psswd) => {

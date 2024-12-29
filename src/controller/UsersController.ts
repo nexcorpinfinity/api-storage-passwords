@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import CryptoJS from 'crypto-js';
 import { Request, Response } from 'express';
 
 import { Permissions } from '../enums/Permissions';
@@ -6,6 +7,8 @@ import { ResponseHTTP } from '../helpers/ResponseHTTP';
 import { UserModel } from '../model/UserModel';
 
 class UserController {
+    private readonly secrectCode: string | undefined = process.env.DECRYPT_SECURE_CODE;
+
     public async store(req: Request, res: Response): Promise<Response> {
         try {
             const { name, email, password, permission } = req.body;
@@ -241,9 +244,9 @@ class UserController {
                 return ResponseHTTP.error(res, 404, 'Usuário não encontrado', []);
             }
 
-            if (user.security_code) {
-                return ResponseHTTP.error(res, 400, 'Código de segurança já cadastrado', []);
-            }
+            // if (user.security_code) {
+            //     return ResponseHTTP.error(res, 400, 'Código de segurança já cadastrado', []);
+            // }
 
             if (!secure_code || secure_code.length < 4) {
                 return ResponseHTTP.error(
@@ -256,6 +259,9 @@ class UserController {
 
             const hashSecureCode = bcrypt.hashSync(secure_code, 12);
 
+            const encryptSecureCode = await this.encryptSecretCode(String(secure_code));
+            console.log(encryptSecureCode);
+
             await UserModel.findByIdAndUpdate(
                 idUserLogged,
                 {
@@ -264,10 +270,47 @@ class UserController {
                 { new: true },
             ).exec();
 
-            return ResponseHTTP.success(res, 200, 'Código de segurança cadastrado com sucesso', []);
+            return ResponseHTTP.success(res, 200, 'Código de segurança cadastrado com sucesso', [
+                { secure_code: encryptSecureCode },
+            ]);
         } catch (error) {
             return ResponseHTTP.error(res, 500, 'Erro Interno setSecureCode', []);
         }
+    }
+
+    public async getSecureCode(req: Request, res: Response) {
+        try {
+            const { code } = req.query;
+
+            if (!code) {
+                return ResponseHTTP.error(res, 400, 'Envie o codigo secreto', []);
+            }
+
+            const idUser = res.locals.user.id;
+
+            const findUser = await UserModel.findOne({ _id: idUser }).exec();
+
+            if (!findUser) {
+                return res.status(400).json({ errors: ['Usuário não encontrado'] });
+            }
+
+            if (!bcrypt.compareSync(String(code), findUser.security_code)) {
+                return ResponseHTTP.error(res, 400, 'Código de segurança inválido', []);
+            }
+
+            const encryptSecureCode = await this.encryptSecretCode(String(code));
+
+            return ResponseHTTP.success(res, 200, 'Seu Código de segurança', [
+                { secure_code: encryptSecureCode },
+            ]);
+        } catch (error) {
+            return ResponseHTTP.error(res, 500, 'Erro Interno getSecureCode', []);
+        }
+    }
+
+    private async encryptSecretCode(secretCode: string) {
+        const encrypted = CryptoJS.AES.encrypt(secretCode, String(this.secrectCode)).toString();
+        return encrypted;
     }
 
     public async countAllUsers(req: Request, res: Response) {

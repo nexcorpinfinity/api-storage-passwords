@@ -12,6 +12,10 @@ userRouter.post('/set-code', AuthLoginRequired, (req, res) =>
     userController.setSecureCode(req, res),
 );
 
+userRouter.get('/get-code', AuthLoginRequired, (req, res) =>
+    userController.getSecureCode(req, res),
+);
+
 userRouter.get('/count', AuthLoginRequired, AdminRequired, (req, res) =>
     userController.countAllUsers(req, res),
 );

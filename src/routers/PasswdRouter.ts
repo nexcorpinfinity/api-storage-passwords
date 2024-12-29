@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { PasswdController } from '../controller/PasswdController';
 import AdminRequired from '../middleware/AdminRequired';
 import AuthLoginRequired from '../middleware/AuthLoginRequired';
-import { verifySecretCode } from '../model/VerifySecretCode';
+import { verifySecretCode } from '../middleware/VerifySecretCode';
 
 const passwdRouter = Router();
 
