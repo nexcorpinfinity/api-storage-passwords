@@ -132,17 +132,26 @@ class PasswdController {
             }
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const obj: any = {
-                name: name || verify.name,
-                login_email: login_email
-                    ? await this.encryptData(login_email, getSecretKey)
-                    : verify.login_email,
-                password: password
-                    ? await this.encryptData(password, getSecretKey)
-                    : verify.password,
+            const encryptedName = name ? await this.encryptData(name, getSecretKey) : verify.name;
+
+            // eslint-disable-next-line prettier/prettier
+            const encryptedLoginEmail = login_email === '' ? '' : login_email ? await this.encryptData(login_email, getSecretKey) : verify.login_email;
+
+            const encryptedPassword = password
+                ? await this.encryptData(password, getSecretKey)
+                : verify.password;
+
+            console.log(login_email, login_email);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const updateData: any = {
+                name: encryptedName,
+                login_email: encryptedLoginEmail,
+                password: encryptedPassword,
             };
 
-            const passwdUpdate = await PasswdModel.findByIdAndUpdate(id, obj, { new: true }).exec();
+            const passwdUpdate = await PasswdModel.findByIdAndUpdate(id, updateData, {
+                new: true,
+            }).exec();
 
             return ResponseHTTP.success(res, 200, 'Sucesso ao atualizar senha', [
                 { passwd: passwdUpdate },
