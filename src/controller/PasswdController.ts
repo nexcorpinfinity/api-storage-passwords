@@ -30,9 +30,10 @@ class PasswdController {
             }
 
             const getSecretKey = this.generateSecretKey(findUser?.security_code);
-
-            const encryptName = await this.encryptData(login_email, getSecretKey);
-            const encryptEmailAndLogin = await this.encryptData(login_email, getSecretKey);
+            const encryptName = await this.encryptData(name, getSecretKey);
+            const encryptEmailAndLogin = login_email
+                ? await this.encryptData(login_email, getSecretKey)
+                : '';
             const encryptPassword = await this.encryptData(password, getSecretKey);
 
             const createNewPass = new PasswdModel({
@@ -81,10 +82,10 @@ class PasswdController {
                     const getSecretKey = this.generateSecretKey(findUser?.security_code);
 
                     const decryptedName = await this.decryptData(String(psswd.name), getSecretKey);
-                    const decryptedEmail = await this.decryptData(
-                        String(psswd.login_email),
-                        getSecretKey,
-                    );
+                    const decryptedEmail =
+                        psswd.login_email && psswd.login_email.trim() !== ''
+                            ? await this.decryptData(String(psswd.login_email), getSecretKey)
+                            : '';
                     const decryptedPassword = await this.decryptData(
                         String(psswd.password),
                         getSecretKey,
@@ -178,7 +179,6 @@ class PasswdController {
             const decrypt = CryptoJS.AES.decrypt(data, secretKey);
 
             const decryptedData = decrypt.toString(CryptoJS.enc.Utf8);
-
             if (!decryptedData) {
                 throw new Error('Dados descriptografados estão vazios ou malformados');
             }
