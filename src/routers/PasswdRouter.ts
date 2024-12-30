@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { PasswdController } from '../controller/PasswdController';
 import AdminRequired from '../middleware/AdminRequired';
 import AuthLoginRequired from '../middleware/AuthLoginRequired';
-import { verifySecretCode } from '../middleware/VerifySecretCode';
+// import { verifySecretCode } from '../middleware/VerifySecretCode';
 
 const passwdRouter = Router();
 
@@ -18,9 +18,7 @@ passwdRouter.get('/count', AuthLoginRequired, (req, res) =>
 );
 
 passwdRouter.post('/', AuthLoginRequired, (req, res) => passwdController.store(req, res));
-passwdRouter.get('/', AuthLoginRequired, verifySecretCode, (req, res) =>
-    passwdController.index(req, res),
-);
+passwdRouter.get('/', AuthLoginRequired, (req, res) => passwdController.index(req, res));
 passwdRouter.put('/:id', AuthLoginRequired, (req, res) => passwdController.update(req, res));
 passwdRouter.delete('/:id', AuthLoginRequired, (req, res) => passwdController.delete(req, res));
 

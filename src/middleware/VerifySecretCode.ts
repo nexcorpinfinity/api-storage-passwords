@@ -19,8 +19,6 @@ export async function verifySecretCode(req: Request, res: Response, next: NextFu
 
         const decryptedCode = decryptSecretCode(String(secret_code));
 
-        console.log(decryptedCode);
-
         const idUser = res.locals.user.id;
 
         const findUser = await UserModel.findOne({ _id: idUser }).exec();
@@ -28,6 +26,8 @@ export async function verifySecretCode(req: Request, res: Response, next: NextFu
         if (!findUser) {
             return res.status(400).json({ errors: ['Usuário não encontrado'] });
         }
+
+        console.log('Código secreto fornecido:', decryptedCode);
 
         const isMatch = bcrypt.compareSync(decryptedCode, findUser.security_code);
 
