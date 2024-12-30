@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import bcrypt from 'bcrypt';
 import CryptoJS from 'crypto-js';
 import dotenv from 'dotenv';
@@ -17,7 +18,7 @@ export async function verifySecretCode(req: Request, res: Response, next: NextFu
             return res.status(400).json({ errors: ['Código secreto é necessário'] });
         }
 
-        const decryptedCode = decryptSecretCode(String(secret_code));
+        // const decryptedCode = decryptSecretCode(String(secret_code));
 
         const idUser = res.locals.user.id;
 
@@ -27,9 +28,9 @@ export async function verifySecretCode(req: Request, res: Response, next: NextFu
             return res.status(400).json({ errors: ['Usuário não encontrado'] });
         }
 
-        console.log('Código secreto fornecido:', decryptedCode);
+        console.log('Código secreto fornecido:', secret_code);
 
-        const isMatch = bcrypt.compareSync(decryptedCode, findUser.security_code);
+        const isMatch = bcrypt.compareSync(String(secret_code), findUser.security_code);
 
         if (!isMatch) {
             return res.status(403).json({ errors: ['Código secreto inválido'] });

@@ -31,11 +31,12 @@ class PasswdController {
 
             const getSecretKey = this.generateSecretKey(findUser?.security_code);
 
+            const encryptName = await this.encryptData(login_email, getSecretKey);
             const encryptEmailAndLogin = await this.encryptData(login_email, getSecretKey);
             const encryptPassword = await this.encryptData(password, getSecretKey);
 
             const createNewPass = new PasswdModel({
-                name: name,
+                name: encryptName,
                 login_email: encryptEmailAndLogin,
                 password: encryptPassword,
                 user_id: idUser,
@@ -79,6 +80,7 @@ class PasswdController {
                 listPasswords.map(async (psswd) => {
                     const getSecretKey = this.generateSecretKey(findUser?.security_code);
 
+                    const decryptedName = await this.decryptData(String(psswd.name), getSecretKey);
                     const decryptedEmail = await this.decryptData(
                         String(psswd.login_email),
                         getSecretKey,
@@ -88,8 +90,9 @@ class PasswdController {
                         getSecretKey,
                     );
 
-                    psswd.login_email = decryptedEmail;
-                    psswd.password = decryptedPassword;
+                    psswd.name = String(decryptedName);
+                    psswd.login_email = String(decryptedEmail);
+                    psswd.password = String(decryptedPassword);
                 }),
             );
 
@@ -170,7 +173,7 @@ class PasswdController {
         }
     }
 
-    private async decryptData(data: string, secretKey: string): Promise<string> {
+    private async decryptData(data: string, secretKey: string) {
         try {
             const decrypt = CryptoJS.AES.decrypt(data, secretKey);
 
@@ -182,6 +185,7 @@ class PasswdController {
 
             return decryptedData;
         } catch (error) {
+            // console.error('Erro ao descriptografar dados:', error);
             throw new Error('Erro ao descriptografar dados');
         }
     }
